@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Please cite the associated manuscript and this software release."
+title: "HAA6Br SRCS research code"
+type: software
+repository-code: "https://github.com/yours0607/haa6br-srcs"
+url: "https://github.com/yours0607/haa6br-srcs"
+authors:
+  - name: "SRCS manuscript authors"
+version: 0.1.0
+date-released: 2026-07-28
+license: MIT
+keywords:
+  - HAA6Br
+  - drinking-water monitoring
+  - few-shot calibration
+  - negative transfer
+  - risk-constrained adaptation
