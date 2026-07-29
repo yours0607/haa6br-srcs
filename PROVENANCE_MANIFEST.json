@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "study_id": "HAA6Br-SRCS-strict-v4",
   "created_utc": "2026-07-29T04:45:00Z",
   "hash_algorithm": "SHA-256",
@@ -55,7 +55,7 @@
     },
     "executed_runner_sha256": "02d6f699aa7ed8116fbc5d13d5a395fd5552dd25f3dfd54e0c751afaa18a2877",
     "executed_runner_available_in_repository": false,
-    "public_implementation_base_commit": "1964defb7bf2f926027bfa40b15384b9a9eece61",
+    "public_implementation_stage4_code_commit": "82e7547a57c1b25ede9df9ebb5c2d08876dd1d55",
     "byte_identical_source_archive": false
   },
   "locked_outputs": [
@@ -135,6 +135,101 @@
       "sha256": "45235194f7dfe04c0fbe1bf9a979bee75b4774e68605467d19e15578012d19c0"
     }
   ],
+  "stage4_revision_analysis": {
+    "evidence_label": "Post-hoc non-confirmatory revision sensitivity",
+    "code_commit": "82e7547a57c1b25ede9df9ebb5c2d08876dd1d55",
+    "bootstrap_replicates": 5000,
+    "joint_multiplicity_family_size": 6,
+    "data_contract": "haa6br_integrated_v1 plus read-only locked strict-v4 predictions and caches",
+    "scripts": [
+      {
+        "logical_path": "stage4_revision_analyses.py",
+        "sha256": "85c9848215aa7b409179beeadbc80152673dcecfe0cc66ac8abe6ed2a0963163"
+      },
+      {
+        "logical_path": "stage4_selector_feature_ablation.py",
+        "sha256": "1bdaa4ffb0fba7a8b97c8b76b799ac18e15c5df82fa50b90af8b2323c0db1403"
+      },
+      {
+        "logical_path": "stage4_mechanism_attribution.py",
+        "sha256": "c440d42bd38b7e3449864d0231e2548a1c5a66786af99936d4deca96aa368c3e"
+      }
+    ],
+    "artifacts": [
+      {
+        "logical_path": "stage4_revision_20260730/stage4_revision_analysis_metadata.json",
+        "bytes": 8589,
+        "sha256": "9594966ec96cb35300b811327381db46a3f20254016a37f736940370256ff048"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/analysis/matched_comparator_outcome_matrix.csv",
+        "bytes": 4909,
+        "sha256": "c0b06acc1683aa1b7e7f3d9ee9f9f96862e3edcb86b3ca1e8e118426c793db66"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/analysis/matched_comparator_bootstrap_contrasts.csv",
+        "bytes": 17312,
+        "sha256": "9c15a715bc12845a8007b985de000db1cdcf9b8ca79b6a41516e2404f6f966c3"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/analysis/multiplicity_bonferroni_sensitivity.csv",
+        "bytes": 3406,
+        "sha256": "813019b983a39d7390b1f069184ad7e4d119dd50e1b11fd4c084d2d505314d15"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/analysis/multiplicity_joint_bootstrap_draws.csv",
+        "bytes": 3464173,
+        "sha256": "9025a68c2c4b34c8a0b5199f04456db2278be1648cb677a31a82e8b3a33e71d1"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/analysis/stage4_analysis_validation_checks.csv",
+        "bytes": 776,
+        "sha256": "28c08986162258a0eb826aa4239b3e09f3d3f961bf50b87042246ceb96c5791c"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/selector_feature_ablation/selector_feature_ablation_run_manifest.json",
+        "bytes": 9689,
+        "sha256": "6a352e0fd91470aba9b1fce6ff5b7ad7116ad5f3420e6954fbb2be8dca34dc53"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/selector_feature_ablation/tables/selector_feature_ablation_comparison.csv",
+        "bytes": 16587,
+        "sha256": "0cc882960ec371f096766dfccf231404329b224066dd798ae8cbac4fdd82c4cc"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/selector_feature_ablation/tables/selector_feature_ablation_contrasts.csv",
+        "bytes": 8115,
+        "sha256": "f85906ad894374b101434b18cbb82da2dff732538b9d322a6db9c531ca9185dc"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/mechanism_attribution/stage4_mechanism_attribution_metadata.json",
+        "bytes": 4932,
+        "sha256": "310c9d6575748ee93320e26c068c43f19f06dbafa7228115eaeaae6750a2c25d"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/mechanism_attribution/analysis/mechanism_variant_summary.csv",
+        "bytes": 3380,
+        "sha256": "1a4b18bb9a2e7ef3f3bcc54e6e3df47bf5ca6e8a5c8892a1fd4d1abb19338e5f"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/mechanism_attribution/analysis/mechanism_variant_pooled_contrasts.csv",
+        "bytes": 2970,
+        "sha256": "0314afc6332c2360d0c206641579b262c37aede8edd7b230cd56d292bd8a493c"
+      },
+      {
+        "logical_path": "stage4_revision_20260730/mechanism_attribution/analysis/locked_full_selector_reproduction.csv",
+        "bytes": 1533,
+        "sha256": "123077e2bf95d66efb655bf9bfeec0d3fb4deb3f859457dfeed5c3785299e9b3"
+      }
+    ],
+    "interpretation_limits": [
+      "All Stage 4 analyses are post-hoc and non-confirmatory.",
+      "History-relative MAE intervals do not establish superiority, equivalence, non-inferiority, or preserved accuracy.",
+      "Negative transfer and regret are prediction-error outcomes, not health, exposure, treatment, or regulatory safety outcomes.",
+      "The selector ablation was retuned on source regions only; held-region outcomes were not used to select a variant.",
+      "The no-cap mechanism sensitivity retains the locked selector and is not an independently retrained algorithm."
+    ]
+  },
   "environment": {
     "python": "3.12.3",
     "numpy": "1.26.4",
