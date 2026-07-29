@@ -1,6 +1,6 @@
 # HAA6Br SRCS
 
-Research code for chronological few-shot calibration and the SRCS policy used in the HAA6Br study. The repository contains the historical benchmark, the optimized SRCS experiment, risk-budget sensitivity reconstruction, and locked-result analysis. It contains no monitoring records or generated results.
+Research code for chronological few-shot calibration and the SRCS policy used in the HAA6Br study. The repository contains the historical benchmark, the optimized SRCS experiment, risk-budget sensitivity reconstruction, locked-result analysis, and the post-hoc Stage 4 robustness and mechanism analyses. It contains no monitoring records, row-level predictions, caches, or generated results.
 
 ## Scientific scope
 
@@ -10,6 +10,7 @@ Research code for chronological few-shot calibration and the SRCS policy used in
 - Leave-one-EPA-region-out evaluation is geographic internal-external validation within UCMR4, not independent prospective external validation.
 - The United Kingdom analysis is a retrospective stress test because those outcomes had been viewed before this optimization.
 - "Risk" and "safety" refer to algorithmic negative transfer. They are not drinking-water health-safety guarantees.
+- All `stage4_*` analyses are post-hoc, non-confirmatory revision sensitivities. They must not be used to claim accuracy superiority, equivalence, non-inferiority, prospective transport, or health safety.
 
 The strict CVaR statistic is the mean of the largest `ceil(0.10 * n_systems)` system regrets. This fixed-count definition avoids dilution when regrets are tied at the quantile boundary.
 
@@ -49,9 +50,25 @@ python evaluate_risk_budget_variants.py \
 python analyze_optimized_results.py \
   --optimized-output <OPTIMIZED_OUTPUT> \
   --historical-output <HISTORICAL_OUTPUT>
+
+python stage4_revision_analyses.py \
+  --optimized-output <OPTIMIZED_OUTPUT> \
+  --data-package <INTEGRATED_V1> \
+  --output-dir <STAGE4_OUTPUT> \
+  --bootstrap 5000
+
+python stage4_selector_feature_ablation.py \
+  --locked-root <OPTIMIZED_OUTPUT> \
+  --data-package <INTEGRATED_V1> \
+  --output-root <STAGE4_OUTPUT>/selector_feature_ablation
+
+python stage4_mechanism_attribution.py \
+  --optimized-output <OPTIMIZED_OUTPUT> \
+  --data-package <INTEGRATED_V1> \
+  --output-dir <STAGE4_OUTPUT>/mechanism_attribution
 ```
 
-Add `--skip-uk` to the optimized runner when the retrospective UK table is unavailable. The historical runner reproduces all historical tracks and therefore requires both UK files listed in `DATA.md`. `--prediction-cache-source` may point to a validated, read-only cache, but caches are never distributed by this repository.
+Add `--skip-uk` to the optimized runner when the retrospective UK table is unavailable. The historical runner reproduces all historical tracks and therefore requires both UK files listed in `DATA.md`. `--prediction-cache-source` may point to a validated, read-only cache, but caches are never distributed by this repository. The selector-ablation and mechanism scripts require the locked strict-v4 candidate-cache manifest and cache files; without that private locked record they can be inspected and tested, but not replayed from this source repository alone.
 
 For a short diagnostic run, use `--smoke --skip-uk`; it still requires the cleaned US data and a CUDA-capable XGBoost installation. Full reproducibility details and evidence labels are in [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
 
