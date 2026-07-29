@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "study_id": "HAA6Br-SRCS-strict-v4",
+  "created_utc": "2026-07-29T04:45:00Z",
+  "hash_algorithm": "SHA-256",
+  "evidence_label": "Post-hoc nested geographic internal-external validation",
+  "data_package": {
+    "logical_id": "haa6br_integrated_v1",
+    "redistributed_by_this_repository": false,
+    "package_manifest_logical_path": "haa6br_integrated_v1/metadata/SHA256SUMS.txt",
+    "package_manifest_entries": 23,
+    "package_manifest_sha256": "6c73c641ded2eac869bc2ae6d77e9a18175d97a757792de071bb9a8de68fd3e0",
+    "integration_code_logical_path": "haa6br_integrated_v1/scripts/haa6br_integration.py",
+    "validation_code_logical_path": "haa6br_integrated_v1/scripts/validate_integrated.py"
+  },
+  "analysis_inputs": [
+    {
+      "logical_path": "haa6br_integrated_v1/data/us_ucmr4_core.csv",
+      "bytes": 26949876,
+      "sha256": "5cf80aae38657ab970a236b8d7dd77058e2432966b54de44d6e8b1e3d0ed12c2",
+      "role": "Primary U.S. analytical core"
+    },
+    {
+      "logical_path": "haa6br_integrated_v1/data/uk_dwi242_locked_external.csv",
+      "bytes": 79979,
+      "sha256": "9a036979c7ff81c35202af5088df3feaca6692e3bedb8b4fa3cb3828ea7496a8",
+      "role": "Retrospective UK pressure-test table"
+    },
+    {
+      "logical_path": "haa6br_integrated_v1/metadata/model_feature_sets.json",
+      "bytes": 1421,
+      "sha256": "84a3d7415a9eec12732364d2893658d0e67cf8865532b48c7e33cfa6c978bf5d",
+      "role": "Allowed feature-set contract"
+    }
+  ],
+  "locked_execution": {
+    "logical_run_id": "optimized_srcs_strict_v4_20260728",
+    "seed": 20260728,
+    "primary_risk_budget": 0.12,
+    "bootstrap_replicates": 5000,
+    "protocol_lock": {
+      "logical_path": "optimized_srcs_strict_v4_20260728/locks/protocol_lock_before_optimized_run.json",
+      "bytes": 4972,
+      "sha256": "f8d45df9b44cadd14f2c833e249834e54272e8f9cb23eb29eccdb990479921e8"
+    },
+    "uk_method_lock": {
+      "logical_path": "optimized_srcs_strict_v4_20260728/locks/method_lock_before_uk_runtime_load.json",
+      "bytes": 2520,
+      "sha256": "d12156fb5775fd73ad3807bee63cd9498cd576dff59a32ca91860c1ba312f88b"
+    },
+    "run_metadata": {
+      "logical_path": "optimized_srcs_strict_v4_20260728/run_metadata.json",
+      "bytes": 2103,
+      "sha256": "c35a7d186544d91a6b5af766002b01008cb4db7541c2a4dad892f9039434412d"
+    },
+    "executed_runner_sha256": "02d6f699aa7ed8116fbc5d13d5a395fd5552dd25f3dfd54e0c751afaa18a2877",
+    "executed_runner_available_in_repository": false,
+    "public_implementation_base_commit": "1964defb7bf2f926027bfa40b15384b9a9eece61",
+    "byte_identical_source_archive": false
+  },
+  "locked_outputs": [
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/us_predictions.csv",
+      "bytes": 70808241,
+      "sha256": "81d900c26881884fcaaab615583c889dc2397393ad5dfd0080bf18e6671ee92c"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/us_summary.csv",
+      "bytes": 14834,
+      "sha256": "13cb258ab1b70a3ada93e8700672865b4877aff50ce16e6d7a9804673d7537c6"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/us_system_summary.csv",
+      "bytes": 17295603,
+      "sha256": "a10da9043684040eb4fbeebc4855626f5820fa5e79d26f1cea9ea7444641f50a"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/us_hierarchical_bootstrap.csv",
+      "bytes": 1293,
+      "sha256": "c230c2740a2605e4f4a909f150e15209e48690203d48b4bbd8c75cd01ac9b9b3"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/us_coverage_summary.csv",
+      "bytes": 1470,
+      "sha256": "28641fdc99c702f76940054e49d6e17ad4b60ccf0df2560f6807af29e70ab6f4"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/eligibility_selection_bias.csv",
+      "bytes": 2801,
+      "sha256": "62dfd1da81434d67b2ab21094ce4d5b09f31705c8557ab4f79776565991acec8"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/selector_invariant_audit.csv",
+      "bytes": 3766,
+      "sha256": "7f76d0497038cb60dd8946e2f8e87a4af13aaedb8407c7b7c539acb62cb03b5d"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/policy_split_audit.csv",
+      "bytes": 16701,
+      "sha256": "49abd1d9243c15d643e2ac6ee5158589888bc2d6794973102a1941c36548caeb"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/analysis/risk_budget_full_summary.csv",
+      "bytes": 7638,
+      "sha256": "6bf7974f4d34e0a977092ea795e4b99618c578d0cf3310fa419c827d6a45cbea"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/analysis/posthoc_safety_contrasts.csv",
+      "bytes": 4514,
+      "sha256": "a168667f11936e2367e0bf1348dbb81f7b5f918e4b2130c463bb75e2c456a7ca"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/analysis/regional_failure_modes.csv",
+      "bytes": 15461,
+      "sha256": "fadb742be966f9697dc2f7794c771bc2eb9694d6a8d13b9686720279a5230568"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/analysis/action_frequency_overall.csv",
+      "bytes": 2504,
+      "sha256": "1eb6a615180790a08a75bd90f16b5607e10b5efb5fb2204a7a0896facf4a7ea3"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/analysis/uk_plant_changes.csv",
+      "bytes": 9668,
+      "sha256": "8e4613c391b8bb1172dea81f53b9ea07e2405afa26445874d598f9bb0ce31d73"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/uk_predictions.csv",
+      "bytes": 246928,
+      "sha256": "c17799dc364fbaee40a688cd59ef7e8919bd64fb6b7e6b37f69033f424edbf21"
+    },
+    {
+      "logical_path": "optimized_srcs_strict_v4_20260728/tables/uk_summary.csv",
+      "bytes": 13548,
+      "sha256": "45235194f7dfe04c0fbe1bf9a979bee75b4774e68605467d19e15578012d19c0"
+    }
+  ],
+  "environment": {
+    "python": "3.12.3",
+    "numpy": "1.26.4",
+    "pandas": "2.3.3",
+    "scipy": "1.13.1",
+    "scikit_learn": "1.5.1",
+    "xgboost": "3.3.0",
+    "gpu_and_driver_serialized": false
+  },
+  "availability": {
+    "analysis_inputs": "Not redistributed; reconstruct from official sources under DATA.md and applicable permissions.",
+    "locked_outputs": "Not tracked in this code repository; hashes identify the manuscript-facing locked record.",
+    "caches": "Rebuildable and intentionally excluded."
+  },
+  "integrity_notes": [
+    "The 12% risk budget is the locked primary operating point.",
+    "The 4% and 6% frontier points are post-hoc; the 6% point was highlighted after inspection.",
+    "Negative transfer and strict CVaR90 are prediction-error endpoints, not health-safety endpoints.",
+    "The public implementation is not a byte-identical archive of the unavailable strict-v4 executed runner."
+  ]
+}

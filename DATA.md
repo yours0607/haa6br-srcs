@@ -2,6 +2,8 @@
 
 No data are distributed with this repository. The only supported experiment input is a cleaned, analysis-ready directory with the logical identifier `haa6br_integrated_v1`.
 
+The locked study input hashes and package-manifest hash are listed in [PROVENANCE_MANIFEST.json](PROVENANCE_MANIFEST.json). These hashes identify the analysis record; they do not grant redistribution rights or make the referenced files available from this repository.
+
 ## Directory layout
 
 ```text

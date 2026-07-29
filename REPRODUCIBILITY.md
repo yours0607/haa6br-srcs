@@ -36,6 +36,8 @@ The compatibility ranges are in `requirements.txt`. The public package was smoke
 
 CUDA training can exhibit small platform-dependent floating-point differences. Treat the saved protocol, script and input hashes, selected actions, and tolerance-based audits as the reproducibility record rather than expecting byte-identical GPU artifacts across hardware.
 
+The logical paths, byte counts, and SHA256 values for the locked inputs, protocol, metadata, and manuscript-facing outputs are recorded in [PROVENANCE_MANIFEST.json](PROVENANCE_MANIFEST.json). The manifest explicitly distinguishes the unavailable exact executed runner from this public implementation.
+
 ## Clean rerun
 
 Use a new output directory for an independent rerun. Do not seed it with old tables. A validated read-only prediction cache can reduce runtime, but the cache manifest and array hashes are checked before reuse. Deleteable caches are rebuildable and must not be included in a source release.

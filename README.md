@@ -6,7 +6,7 @@ Research code for chronological few-shot calibration and the SRCS policy used in
 
 - `SRCS-12` means the pre-specified primary algorithmic negative-transfer budget of 12% (`0.12`). It does not mean 12 actions. The policy evaluates 20 actions: five action families at four shrinkage levels.
 - The primary optimization searches budgets `0.08`, `0.10`, `0.12`, and `0.15`; `0.12` is the locked primary operating point.
-- The 6% operating point is introduced only by `evaluate_risk_budget_variants.py`. It is a post-hoc exploratory safety operating point selected after the main results were viewed.
+- The 6% operating point is introduced only by `evaluate_risk_budget_variants.py`. It is a post-hoc exploratory prediction-harm operating point selected after the main results were viewed.
 - Leave-one-EPA-region-out evaluation is geographic internal-external validation within UCMR4, not independent prospective external validation.
 - The United Kingdom analysis is a retrospective stress test because those outcomes had been viewed before this optimization.
 - "Risk" and "safety" refer to algorithmic negative transfer. They are not drinking-water health-safety guarantees.
@@ -54,6 +54,10 @@ python analyze_optimized_results.py \
 Add `--skip-uk` to the optimized runner when the retrospective UK table is unavailable. The historical runner reproduces all historical tracks and therefore requires both UK files listed in `DATA.md`. `--prediction-cache-source` may point to a validated, read-only cache, but caches are never distributed by this repository.
 
 For a short diagnostic run, use `--smoke --skip-uk`; it still requires the cleaned US data and a CUDA-capable XGBoost installation. Full reproducibility details and evidence labels are in [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
+
+## Integrity and provenance
+
+[PROVENANCE_MANIFEST.json](PROVENANCE_MANIFEST.json) records logical input, protocol-lock, run-metadata, and manuscript-facing output hashes. The referenced monitoring data and locked results are not distributed by this code repository. The manifest also records that the exact strict-v4 executed runner is unavailable here, so this release is a public implementation rather than a byte-identical archive of the locked execution.
 
 ## Outputs
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -95,3 +96,21 @@ def test_public_scripts_have_no_private_dependency_or_absolute_path() -> None:
         assert ".deps" not in source
         assert "PROJECT_DIR.parent / \"haa6br_data\"" not in source
         assert drive_literal.search(source) is None
+
+
+def test_provenance_manifest_is_structured_and_discloses_source_gap() -> None:
+    path = ROOT / "PROVENANCE_MANIFEST.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+
+    assert manifest["hash_algorithm"] == "SHA-256"
+    assert manifest["data_package"]["logical_id"] == "haa6br_integrated_v1"
+    assert manifest["data_package"]["package_manifest_entries"] == 23
+    assert manifest["locked_execution"]["executed_runner_available_in_repository"] is False
+    assert manifest["locked_execution"]["byte_identical_source_archive"] is False
+    assert len(manifest["analysis_inputs"]) == 3
+    assert len(manifest["locked_outputs"]) >= 10
+
+    serialized = json.dumps(manifest, ensure_ascii=True)
+    assert re.search(r"[A-Za-z]:[\\/]", serialized) is None
+    for artifact in [*manifest["analysis_inputs"], *manifest["locked_outputs"]]:
+        assert re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"])
