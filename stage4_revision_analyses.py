@@ -101,14 +101,20 @@ def system_method_errors(
 
     id_columns = [REGION, GROUP, "round_index"]
     round_frame = subset[id_columns].copy()
+    metric_columns: list[str] = []
     for method in methods:
         round_frame[method] = np.abs(
             subset["observed"].to_numpy(float) - subset[method].to_numpy(float)
         )
+        bias_column = f"bias__{method}"
+        round_frame[bias_column] = (
+            subset[method].to_numpy(float) - subset["observed"].to_numpy(float)
+        )
+        metric_columns.extend([method, bias_column])
     system = (
-        round_frame.groupby(id_columns, as_index=False)[list(methods)]
+        round_frame.groupby(id_columns, as_index=False)[metric_columns]
         .mean()
-        .groupby([REGION, GROUP], as_index=False)[list(methods)]
+        .groupby([REGION, GROUP], as_index=False)[metric_columns]
         .mean()
     )
     for method in methods:
@@ -147,6 +153,9 @@ def summarize_system_frame(
             "systems": int(len(system)),
             "regions": int(system[REGION].nunique()),
             "equal_system_mae": float(np.mean(errors)),
+            "equal_system_signed_bias": float(
+                np.mean(system[f"bias__{method}"].to_numpy(float))
+            ),
             "mean_regret_vs_zero_shot": float(np.mean(regrets)),
             "strict_cvar90_regret": strict_cvar90(regrets),
             "p95_regret": float(np.quantile(regrets, 0.95)),
@@ -975,6 +984,7 @@ def validate_analysis_frames(
     )
     finite_columns = [
         "equal_system_mae",
+        "equal_system_signed_bias",
         "mean_regret_vs_zero_shot",
         "strict_cvar90_regret",
         "p95_regret",

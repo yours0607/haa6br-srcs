@@ -58,10 +58,13 @@ def test_system_metrics_are_paired_and_directional() -> None:
     assert set(METHODS).issubset(system.columns)
     assert np.allclose(system["regret__SRCS"], -1.5)
     assert np.allclose(system["regret__History mean"], -1.0)
+    assert np.allclose(system["bias__SRCS"], -0.5)
+    assert np.allclose(system["bias__History mean"], -1.0)
     summary = summarize_system_frame(system, 1, "synthetic")
     srcs = summary.loc[summary["method"].eq("SRCS")].iloc[0]
     assert srcs["systems"] == 4
     assert np.isclose(srcs["equal_system_mae"], 0.5)
+    assert np.isclose(srcs["equal_system_signed_bias"], -0.5)
     assert np.isclose(srcs["negative_transfer_rate_gt_1e-12"], 0.0)
 
 
