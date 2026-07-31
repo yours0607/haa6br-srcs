@@ -11,6 +11,9 @@ The intended analysis order is:
 5. Run `stage4_revision_analyses.py` on the locked predictions with 5,000 paired region/system bootstrap replicates.
 6. Run `stage4_selector_feature_ablation.py` with all ten held regions and `k = 1, 2, 3`; the ablated selector is retuned on source regions only.
 7. Run `stage4_mechanism_attribution.py` with all ten held regions and `k = 1, 2, 3`.
+8. Run `stage4_reviewer2_analyses.py` to construct the coverage-matched gates, source-risk trajectories, and regional separability diagnostics.
+9. Run `final_reviewer_revision_analyses.py` to audit directional underprediction and the four mutually exclusive decision-overlap cells.
+10. Run `build_stage4_figures_matlab.m` against the frozen aggregate figure-source tables distributed with the manuscript package.
 
 The analyzer expects the risk-budget reconstruction tables to exist. Running it before step 3 fails explicitly.
 
@@ -43,7 +46,7 @@ CUDA training can exhibit small platform-dependent floating-point differences. T
 
 The logical paths, byte counts, and SHA256 values for the locked inputs, protocol, metadata, and manuscript-facing outputs are recorded in [PROVENANCE_MANIFEST.json](PROVENANCE_MANIFEST.json). The manifest explicitly distinguishes the unavailable exact executed runner from this public implementation.
 
-The Stage 4 mechanism analysis reproduces the locked selector decisions before computing any counterfactual variant. The application-layer no-cap sensitivity retains the original selector and therefore is not an independently retrained algorithm. The count/site ablation and all mechanism contrasts are post-hoc and non-confirmatory.
+The Stage 4 mechanism analysis reproduces the locked selector decisions before computing any counterfactual variant. The application-layer no-cap sensitivity retains the original selector and therefore is not an independently retrained algorithm. The count/site ablation, coverage-matched gates, directional audit, and all mechanism contrasts are post-hoc and non-confirmatory.
 
 ## Clean rerun
 
@@ -53,6 +56,6 @@ Generated metadata intentionally records logical artifact names rather than priv
 
 ## Interpretation limits
 
-The negative-transfer budget controls an empirical algorithmic error criterion. It is not a toxicological threshold, regulatory compliance statement, uncertainty guarantee for every system, or drinking-water health-safety guarantee. Prediction bands are source-derived empirical intervals, not formal cluster-conformal coverage guarantees.
+The negative-transfer budget controls an empirical algorithmic error criterion. It is not a toxicological threshold, regulatory compliance statement, uncertainty guarantee for every system, or drinking-water health-safety guarantee. Prediction bands are source-derived empirical intervals, not formal cluster-conformal coverage guarantees. All reported correction-or-fallback trajectories remain conditional on the locked XGBoost base predictor.
 
 The Stage 4 bootstrap tails are finite Monte Carlo estimates. At 5,000 replicates, the Bonferroni 0.00417 tail is supported by roughly 21 order statistics; report the interval as a conservative sensitivity analysis rather than a precise inferential boundary.

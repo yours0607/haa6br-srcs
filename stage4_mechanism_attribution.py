@@ -31,8 +31,10 @@ from stage4_revision_analyses import (
 
 
 PRIMARY_BUDGET = 0.12
+FIXED_THRESHOLD_ACTION = optimized.action_name("RawMean", 1.0)
 VARIANTS = (
     "full_srcs_reproduced",
+    "fixed_threshold_capped_raw_mean",
     "zero_margin_gate",
     "forced_action_no_abstention",
     "source_utility_without_risk_constraints",
@@ -134,6 +136,119 @@ def source_utility_spec(search: pd.DataFrame) -> dict[str, float]:
         "source_cvar90": float(winner["cvar90"]),
         "source_adaptation_rate": float(winner["adaptation_rate"]),
     }
+
+
+def fixed_threshold_decisions(
+    systems: pd.DataFrame,
+    threshold: float,
+) -> pd.DataFrame:
+    """Apply one source-selected residual-magnitude gate to capped RawMean."""
+    required = {
+        GROUP,
+        REGION,
+        "k",
+        "base_mae",
+        "evaluation_rounds",
+        "evaluation_samples",
+        "abs_mean_residual",
+        f"actual__{FIXED_THRESHOLD_ACTION}",
+    }
+    missing = sorted(required.difference(systems.columns))
+    if missing:
+        raise ValueError(f"Fixed-threshold baseline is missing columns: {missing}")
+
+    output = systems[
+        [GROUP, REGION, "k", "base_mae", "evaluation_rounds", "evaluation_samples"]
+    ].copy()
+    adapted = systems["abs_mean_residual"].to_numpy(float) >= float(threshold)
+    action_delta = systems[f"actual__{FIXED_THRESHOLD_ACTION}"].to_numpy(float)
+    selected_actual = np.where(adapted, action_delta, 0.0)
+    output["selected_action"] = np.where(
+        adapted,
+        FIXED_THRESHOLD_ACTION,
+        "Zero-shot",
+    )
+    # The baseline has no learned loss prediction; this field is retained only
+    # to satisfy the shared sample-selection interface.
+    output["selected_predicted_delta"] = np.nan
+    output["selected_actual_delta"] = selected_actual
+    output["adapted"] = adapted
+    output["negative_transfer"] = selected_actual > 1e-12
+    return output
+
+
+def tune_fixed_threshold(
+    source_systems: pd.DataFrame,
+    risk_budget: float,
+) -> tuple[dict[str, float | bool], pd.DataFrame]:
+    """Select one scalar gate from source OOF systems under the SRCS constraints."""
+    residual = source_systems["abs_mean_residual"].to_numpy(float)
+    candidates = np.unique(
+        np.round(
+            np.concatenate(
+                [
+                    np.array([0.0]),
+                    np.quantile(residual, np.linspace(0.0, 1.0, 51)),
+                    np.array([float(np.max(residual) + 1e-9)]),
+                ]
+            ),
+            decimals=12,
+        )
+    )
+    rows: list[dict[str, object]] = []
+    winner: tuple[tuple[float, ...], dict[str, object]] | None = None
+    for threshold in candidates:
+        decisions = fixed_threshold_decisions(source_systems, float(threshold))
+        score = optimized.score_decisions(decisions, risk_budget)
+        row: dict[str, object] = {
+            "threshold_abs_mean_residual_ug_l": float(threshold),
+            "risk_budget": float(risk_budget),
+            **score,
+        }
+        rows.append(row)
+        if bool(score["feasible"]):
+            key = (
+                float(score["mean_delta"]),
+                float(score["cvar90"]),
+                float(score["negative_transfer"]),
+                -float(score["adaptation_rate"]),
+                float(threshold),
+            )
+            if winner is None or key < winner[0]:
+                winner = (key, row)
+
+    if winner is None:
+        selected = rows[-1]
+    else:
+        selected = winner[1]
+    return {
+        key: value
+        for key, value in selected.items()
+        if key != "risk_budget"
+    }, pd.DataFrame(rows)
+
+
+def fixed_threshold_target_invariance(
+    target_systems: pd.DataFrame,
+    threshold: float,
+    seed: int,
+) -> bool:
+    reference = fixed_threshold_decisions(target_systems, threshold)
+    perturbed = target_systems.copy()
+    rng = np.random.default_rng(seed)
+    perturbed[f"actual__{FIXED_THRESHOLD_ACTION}"] = rng.normal(
+        0.0,
+        1000.0,
+        len(perturbed),
+    )
+    repeated = fixed_threshold_decisions(perturbed, threshold)
+    return bool(
+        reference["selected_action"].equals(repeated["selected_action"])
+        and np.array_equal(
+            reference["adapted"].to_numpy(),
+            repeated["adapted"].to_numpy(),
+        )
+    )
 
 
 def uncapped_same_selector(
@@ -266,6 +381,121 @@ def summarize_contrasts(system_tables: dict[str, pd.DataFrame], k: int) -> pd.Da
     return pd.DataFrame(rows)
 
 
+def fixed_threshold_bootstrap_contrasts(
+    system_table: pd.DataFrame,
+    n_boot: int,
+    seed: int,
+) -> pd.DataFrame:
+    """Paired region-then-system intervals for SRCS versus the trivial gate."""
+    if n_boot < 100:
+        raise ValueError("At least 100 bootstrap replicates are required")
+    rows: list[dict[str, object]] = []
+    metric_names = (
+        "equal_system_mae_difference",
+        "negative_transfer_rate_difference",
+        "strict_cvar90_regret_difference",
+        "p95_regret_difference",
+        "adaptation_rate_difference",
+    )
+    for k in sorted(system_table["k"].unique()):
+        frame = system_table.loc[system_table["k"].eq(k)]
+        full = (
+            frame.loc[frame["variant"].eq("full_srcs_reproduced")]
+            .set_index([REGION, GROUP])
+            .sort_index()
+        )
+        baseline = (
+            frame.loc[frame["variant"].eq("fixed_threshold_capped_raw_mean")]
+            .set_index([REGION, GROUP])
+            .sort_index()
+        )
+        if not full.index.equals(baseline.index):
+            raise AssertionError(f"Fixed-threshold cohort mismatch at k={k}")
+
+        region_values = full.index.get_level_values(REGION).to_numpy()
+        regions = np.asarray(sorted(pd.unique(region_values)))
+        positions = {
+            region: np.flatnonzero(region_values == region) for region in regions
+        }
+        full_error = full["variant_abs"].to_numpy(float)
+        baseline_error = baseline["variant_abs"].to_numpy(float)
+        full_regret = full["regret"].to_numpy(float)
+        baseline_regret = baseline["regret"].to_numpy(float)
+        full_adapted = full["adapted"].to_numpy(float)
+        baseline_adapted = baseline["adapted"].to_numpy(float)
+
+        point = {
+            "equal_system_mae_difference": float(np.mean(full_error - baseline_error)),
+            "negative_transfer_rate_difference": float(
+                np.mean(full_regret > 1e-12) - np.mean(baseline_regret > 1e-12)
+            ),
+            "strict_cvar90_regret_difference": float(
+                strict_cvar90(full_regret) - strict_cvar90(baseline_regret)
+            ),
+            "p95_regret_difference": float(
+                np.quantile(full_regret, 0.95)
+                - np.quantile(baseline_regret, 0.95)
+            ),
+            "adaptation_rate_difference": float(
+                np.mean(full_adapted) - np.mean(baseline_adapted)
+            ),
+        }
+        distributions = {
+            metric: np.empty(n_boot, dtype=float) for metric in metric_names
+        }
+        rng = np.random.default_rng(seed + 100 * int(k))
+        for iteration in range(n_boot):
+            sampled_regions = rng.choice(regions, size=len(regions), replace=True)
+            idx = np.concatenate(
+                [
+                    rng.choice(
+                        positions[region],
+                        size=len(positions[region]),
+                        replace=True,
+                    )
+                    for region in sampled_regions
+                ]
+            )
+            distributions["equal_system_mae_difference"][iteration] = float(
+                np.mean(full_error[idx] - baseline_error[idx])
+            )
+            distributions["negative_transfer_rate_difference"][iteration] = float(
+                np.mean(full_regret[idx] > 1e-12)
+                - np.mean(baseline_regret[idx] > 1e-12)
+            )
+            distributions["strict_cvar90_regret_difference"][iteration] = float(
+                strict_cvar90(full_regret[idx]) - strict_cvar90(baseline_regret[idx])
+            )
+            distributions["p95_regret_difference"][iteration] = float(
+                np.quantile(full_regret[idx], 0.95)
+                - np.quantile(baseline_regret[idx], 0.95)
+            )
+            distributions["adaptation_rate_difference"][iteration] = float(
+                np.mean(full_adapted[idx]) - np.mean(baseline_adapted[idx])
+            )
+
+        for metric in metric_names:
+            values = distributions[metric]
+            rows.append(
+                {
+                    "analysis_status": ANALYSIS_STATUS,
+                    "confirmatory_status": "not_confirmatory",
+                    "k": int(k),
+                    "method": "full_srcs_reproduced",
+                    "comparator": "fixed_threshold_capped_raw_mean",
+                    "metric": metric,
+                    "point_estimate": point[metric],
+                    "ci_low": float(np.quantile(values, 0.025)),
+                    "ci_high": float(np.quantile(values, 0.975)),
+                    "bootstrap_replicates": int(n_boot),
+                    "bootstrap_seed": int(seed + 100 * int(k)),
+                    "direction": "negative values favor full SRCS",
+                    "multiplicity": "unadjusted descriptive interval",
+                }
+            )
+    return pd.DataFrame(rows)
+
+
 def small_cluster_mechanism_sensitivity(
     regional_contrasts: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -318,6 +548,8 @@ def run_mechanism_attribution(
     output_dir: Path,
     outer_regions: tuple[int, ...],
     k_values: tuple[int, ...],
+    n_boot: int,
+    seed: int,
 ) -> dict[str, object]:
     started = time.time()
     optimized_output = optimized_output.resolve()
@@ -381,6 +613,7 @@ def run_mechanism_attribution(
     system_outputs = []
     contrast_frames = []
     spec_rows = []
+    threshold_search_frames = []
     reproduction_rows = []
     for outer_region in outer_regions:
         source_regions = tuple(region for region in all_regions if region != outer_region)
@@ -403,6 +636,13 @@ def run_mechanism_attribution(
                 k,
                 True,
             )
+            fixed_threshold_spec, fixed_threshold_search = tune_fixed_threshold(
+                final_source_systems,
+                PRIMARY_BUDGET,
+            )
+            fixed_threshold_search.insert(0, "k", k)
+            fixed_threshold_search.insert(0, "outer_target_region", outer_region)
+            threshold_search_frames.append(fixed_threshold_search)
 
             full_spec_rows = locked_specs.loc[
                 locked_specs["outer_target_region"].eq(outer_region)
@@ -434,6 +674,10 @@ def run_mechanism_attribution(
                     float(full_spec["margin"]),
                     "all",
                 ),
+                "fixed_threshold_capped_raw_mean": fixed_threshold_decisions(
+                    target_systems,
+                    float(fixed_threshold_spec["threshold_abs_mean_residual_ug_l"]),
+                ),
                 "zero_margin_gate": optimized.decisions_from_predictions(
                     full_policy_predictions,
                     0.0,
@@ -451,22 +695,29 @@ def run_mechanism_attribution(
                 ),
             }
             for name, decision in decisions.items():
-                invariant = optimized.fixed_spec_decision_invariant_to_future_losses(
-                    full_policy_predictions
-                    if name != "source_utility_without_risk_constraints"
-                    else predictions_by_alpha[float(unconstrained["alpha"])],
-                    (
-                        float(full_spec["margin"])
-                        if name == "full_srcs_reproduced"
-                        else 0.0
-                        if name == "zero_margin_gate"
-                        else -np.inf
-                        if name == "forced_action_no_abstention"
-                        else float(unconstrained["margin"])
-                    ),
-                    "all",
-                    optimized.SEED + 10000 * outer_region + 100 * k + len(name),
-                )
+                if name == "fixed_threshold_capped_raw_mean":
+                    invariant = fixed_threshold_target_invariance(
+                        target_systems,
+                        float(fixed_threshold_spec["threshold_abs_mean_residual_ug_l"]),
+                        seed + 10000 * outer_region + 100 * k + len(name),
+                    )
+                else:
+                    invariant = optimized.fixed_spec_decision_invariant_to_future_losses(
+                        full_policy_predictions
+                        if name != "source_utility_without_risk_constraints"
+                        else predictions_by_alpha[float(unconstrained["alpha"])],
+                        (
+                            float(full_spec["margin"])
+                            if name == "full_srcs_reproduced"
+                            else 0.0
+                            if name == "zero_margin_gate"
+                            else -np.inf
+                            if name == "forced_action_no_abstention"
+                            else float(unconstrained["margin"])
+                        ),
+                        "all",
+                        seed + 10000 * outer_region + 100 * k + len(name),
+                    )
                 if not invariant:
                     raise AssertionError(f"Future-loss invariance failed: {name}")
 
@@ -576,6 +827,24 @@ def run_mechanism_attribution(
                     {
                         "outer_target_region": outer_region,
                         "k": k,
+                        "variant": "fixed_threshold_capped_raw_mean",
+                        "threshold_abs_mean_residual_ug_l": float(
+                            fixed_threshold_spec["threshold_abs_mean_residual_ug_l"]
+                        ),
+                        "source_mean_delta": float(fixed_threshold_spec["mean_delta"]),
+                        "source_negative_transfer": float(
+                            fixed_threshold_spec["negative_transfer"]
+                        ),
+                        "source_cvar90": float(fixed_threshold_spec["cvar90"]),
+                        "source_adaptation_rate": float(
+                            fixed_threshold_spec["adaptation_rate"]
+                        ),
+                        "source_feasible": bool(fixed_threshold_spec["feasible"]),
+                        "selection_evidence": "source-OOF scalar absolute-mean-residual threshold under the same empirical feasibility constraints; target outcomes unused",
+                    },
+                    {
+                        "outer_target_region": outer_region,
+                        "k": k,
                         "variant": "source_utility_without_risk_constraints",
                         "alpha": float(unconstrained["alpha"]),
                         "margin": float(unconstrained["margin"]),
@@ -605,8 +874,14 @@ def run_mechanism_attribution(
         }
         pooled_contrast_frames.append(summarize_contrasts(tables, int(k)))
     pooled_contrasts = pd.concat(pooled_contrast_frames, ignore_index=True)
+    fixed_threshold_bootstrap = fixed_threshold_bootstrap_contrasts(
+        system_table,
+        n_boot=n_boot,
+        seed=seed,
+    )
     small_cluster = small_cluster_mechanism_sensitivity(regional_contrasts)
     specifications = pd.DataFrame(spec_rows)
+    threshold_search = pd.concat(threshold_search_frames, ignore_index=True)
     reproduction = pd.DataFrame(reproduction_rows)
 
     analysis_dir = output_dir / "analysis"
@@ -615,9 +890,11 @@ def run_mechanism_attribution(
         "mechanism_variant_system_outcomes.csv": system_table,
         "mechanism_variant_summary.csv": summary,
         "mechanism_variant_pooled_contrasts.csv": pooled_contrasts,
+        "fixed_threshold_bootstrap_contrasts.csv": fixed_threshold_bootstrap,
         "mechanism_variant_region_contrasts.csv": regional_contrasts,
         "mechanism_variant_small_cluster_sensitivity.csv": small_cluster,
         "mechanism_variant_source_specs.csv": specifications,
+        "fixed_threshold_source_search.csv": threshold_search,
         "locked_full_selector_reproduction.csv": reproduction,
         "mechanism_base_model_cache_audit.csv": pd.DataFrame(
             prediction_cache.audit_rows
@@ -647,7 +924,14 @@ def run_mechanism_attribution(
         "outer_regions": list(outer_regions),
         "k_values": list(k_values),
         "variants": list(VARIANTS),
+        "bootstrap": {
+            "replicates": int(n_boot),
+            "base_seed": int(seed),
+            "sampling": "paired EPA-region then system bootstrap",
+            "interval": "unadjusted descriptive 95% percentile interval",
+        },
         "interpretation_boundaries": {
+            "fixed_threshold_capped_raw_mean": "post-hoc trivial baseline using one source-OOF-selected absolute mean calibration-residual threshold, capped RawMean correction, and zero-shot fallback; threshold selection uses the same empirical source-feasibility conditions as SRCS",
             "cap_removed_at_application_same_selector": "conditional application-layer attribution; the selector was trained on capped action losses and was not retuned without the cap",
             "zero_margin_gate": "removes the positive abstention margin but retains fallback for actions predicted not to improve error",
             "forced_action_no_abstention": "forces the source-trained selector's predicted-best action for every target system",
@@ -720,6 +1004,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--outer-region", type=int, action="append")
     parser.add_argument("--k-values", type=int, nargs="+", default=[1, 2, 3])
+    parser.add_argument("--bootstrap", type=int, default=5000)
+    parser.add_argument("--seed", type=int, default=20260730)
     parser.add_argument("--smoke", action="store_true")
     return parser.parse_args()
 
@@ -739,6 +1025,8 @@ def main() -> None:
         output_dir=args.output_dir,
         outer_regions=outer_regions,
         k_values=k_values,
+        n_boot=args.bootstrap,
+        seed=args.seed,
     )
     print(json.dumps(metadata, ensure_ascii=False, indent=2), flush=True)
 

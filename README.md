@@ -1,6 +1,6 @@
 # HAA6Br SRCS
 
-Research code for chronological few-shot calibration and the SRCS policy used in the HAA6Br study. The repository contains the historical benchmark, the optimized SRCS experiment, risk-budget sensitivity reconstruction, locked-result analysis, and the post-hoc Stage 4 robustness and mechanism analyses. It contains no monitoring records, row-level predictions, caches, or generated results.
+Research code for chronological few-shot calibration and the SRCS policy used in the HAA6Br study. The repository contains the historical benchmark, the optimized SRCS experiment, risk-budget sensitivity reconstruction, locked-result analysis, post-hoc Stage 4 robustness and mechanism analyses, final directional/decision-overlap audits, and the MATLAB submission-figure builder. It contains no monitoring records, row-level predictions, caches, or generated results.
 
 ## Scientific scope
 
@@ -66,9 +66,24 @@ python stage4_mechanism_attribution.py \
   --optimized-output <OPTIMIZED_OUTPUT> \
   --data-package <INTEGRATED_V1> \
   --output-dir <STAGE4_OUTPUT>/mechanism_attribution
+
+python stage4_reviewer2_analyses.py \
+  --optimized-output <OPTIMIZED_OUTPUT> \
+  --data-package <INTEGRATED_V1> \
+  --mechanism-output <STAGE4_OUTPUT>/mechanism_attribution \
+  --output-dir <STAGE4_OUTPUT>/reviewer2_analyses
+
+python final_reviewer_revision_analyses.py \
+  --predictions <OPTIMIZED_OUTPUT>/tables/us_predictions.csv \
+  --coverage-outcomes <STAGE4_OUTPUT>/reviewer2_analyses/analysis/coverage_matched_system_outcomes.csv \
+  --risk-systems <OPTIMIZED_OUTPUT>/analysis/risk_budget_system_results.csv \
+  --risk-coverage <STAGE4_OUTPUT>/reviewer2_analyses/analysis/risk_coverage_figure_data.csv \
+  --output-dir <FINAL_REVIEW_OUTPUT>
 ```
 
-Add `--skip-uk` to the optimized runner when the retrospective UK table is unavailable. The historical runner reproduces all historical tracks and therefore requires both UK files listed in `DATA.md`. `--prediction-cache-source` may point to a validated, read-only cache, but caches are never distributed by this repository. The selector-ablation and mechanism scripts require the locked strict-v4 candidate-cache manifest and cache files; without that private locked record they can be inspected and tested, but not replayed from this source repository alone.
+`build_stage4_figures_matlab.m` is the exact MATLAB R2023a submission-figure builder. It consumes the aggregate `source_data/` tables distributed with the manuscript figure package; those generated tables are not duplicated in this code-only repository.
+
+Add `--skip-uk` to the optimized runner when the retrospective UK table is unavailable. The historical runner reproduces all historical tracks and therefore requires both UK files listed in `DATA.md`. `--prediction-cache-source` may point to a validated, read-only cache, but caches are never distributed by this repository. The selector-ablation, mechanism, and reviewer-audit scripts require the locked strict-v4 result tables or candidate-cache records named above. Without those records they can be inspected and tested, but the complete manuscript analysis cannot be replayed from this source repository alone.
 
 For a short diagnostic run, use `--smoke --skip-uk`; it still requires the cleaned US data and a CUDA-capable XGBoost installation. Full reproducibility details and evidence labels are in [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
 
